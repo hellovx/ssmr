@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:jee="http://www.springframework.org/schema/jee"
+	xmlns:tx="http://www.springframework.org/schema/tx" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.0.xsd http://www.springframework.org/schema/jee http://www.springframework.org/schema/jee/spring-jee-3.0.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.0.xsd "
+	default-lazy-init="true">
+
+	<description>Spring公共配置 </description>
+
+
+	<!--扫描读取注解 配置 （组件扫描） controller部分不扫描交给springmvc -->
+	<context:component-scan base-package="org.zh,com.zh">
+		<context:exclude-filter type="annotation"
+			expression="org.springframework.stereotype.Controller" />
+	</context:component-scan>
+
+	<!-- 定义受环境影响易变的变量 -->
+	<bean
+		class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="systemPropertiesModeName" value="SYSTEM_PROPERTIES_MODE_OVERRIDE" />
+		<property name="ignoreResourceNotFound" value="true" />
+		<property name="locations">
+			<list>
+				<!-- 标准配置 -->
+				<value>classpath*:/application.properties</value>
+			</list>
+		</property>
+	</bean>
+
+	<!-- 数据源配置,druid数据库连接池 -->
+	<bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource"
+		init-method="init" destroy-method="close">
+		<!-- Connection Info -->
+		<property name="driverClassName" value="${jdbc.driver}" />
+		<property name="url" value="${jdbc.url}" />
+		<property name="username" value="${jdbc.username}" />
+		<property name="password" value="${jdbc.password}" />
+
+		<!-- Connection Pooling Info -->
+		<property name="initialSize" value="${dbcp.initialSize}" />
+		<property name="maxActive" value="${dbcp.maxActive}" />
+		<property name="connectionProperties" value="${dbcp.coding}" />
+	</bean>
+
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<!-- 数据库连接池 -->
+		<property name="dataSource" ref="dataSource" />
+		<!-- 加载mybatis的全局配置文件 -->
+		<property name="configLocation" value="classpath:mybatisConfig.xml" />
+		 <property name="configurationProperties">
+            <props>
+            <!--  cacheEnabled:二级缓存是否开启
+            lazyLoadingEnabled：全局性设置懒加载。如果设为‘false’，则所有相关联的都会被初始化加载。
+            aggressiveLazyLoading：当设置为‘true’的时候，懒加载的对象可能被任何懒属性全部加载。否则，每个属性都按需加载。 -->
+                <prop key="cacheEnabled">true</prop> 
+                <prop key="lazyLoadingEnabled">false</prop> 
+                <prop key="aggressiveLazyLoading">true</prop>
+            </props>
+        </property>
+	</bean>
+
+	<!-- mapper扫描器 所谓的扫描dao -->
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<!-- 扫描包路径，如果需要扫描多个包，中间使用半角逗号隔开 -->
+		<property name="basePackage" value="com.zh.mapper"></property>
+		<property name="sqlSessionFactoryBeanName" value="sqlSessionFactory" />
+	</bean>
+
+
+	<!-- 事务管理器 对mybatis操作数据库事务控制 -->
+	<bean id="transactionManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+
+	<!-- 使用annotation定义事务 -->
+	<tx:annotation-driven transaction-manager="transactionManager"
+		proxy-target-class="true" />
+
+	<!-- AOP注解配置 -->
+	<aop:aspectj-autoproxy />
+
+</beans>

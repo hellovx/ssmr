@@ -1,0 +1,4 @@
+
+maven3.x+spring4.x+mybatis3.x+springmvc4.x
+redis缓存
+mysql
